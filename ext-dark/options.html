@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Opções - Dark Included</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main>
+    <h1>Domínios com modo escuro</h1>
+
+    <label for="domains">Liste os domínios (uma linha por domínio):</label>
+    <textarea id="domains" rows="8" placeholder="ex: github.com"></textarea>
+
+    <label for="defaultMode">Modo padrão do navegador:</label>
+    <select id="defaultMode">
+      <option value="light">Light (padrão: nada muda)</option>
+      <option value="dark">Dark (padrão: tudo escuro, exceto listados)</option>
+    </select>
+
+    <div class="actions">
+      <button id="save">Salvar</button>
+      <button id="restore">Restaurar padrão</button>
+      <span id="status"></span>
+    </div>
+
+    <p class="hint">Exemplos: <code>github.com</code>; <code>stackoverflow.com</code></p>
+  </main>
+
+  <script src="options.js"></script>
+</body>
+</html>

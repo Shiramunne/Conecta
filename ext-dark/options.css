@@ -1,0 +1,13 @@
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  margin: 16px;
+  color: #111;
+  width: 350px; /* Define uma largura para o menu suspenso */
+}
+main { max-width: 720px; }
+textarea { width: 100%; font-family: monospace; margin-bottom: 8px; }
+label { display: block; margin-top: 12px; margin-bottom: 6px; font-weight: 600; }
+.actions { margin-top: 12px; display:flex; gap:8px; align-items:center; }
+#status { margin-left: 8px; color: green; }
+.hint { margin-top: 12px; color: #555; font-size: 0.9em; }
+button { padding: 6px 10px; }
