@@ -1,0 +1,9 @@
+{
+  "name": "com.yuri.vbsbridge",
+  "description": "Host Otimizado",
+  "path": "C:\\Conecta\\Conecta Ext\\ext-rota\\host-nativo\\start_host.bat",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://kglchbmkghpenmhonmailacecimpnkkb/"
+  ]
+}

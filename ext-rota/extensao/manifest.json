@@ -1,0 +1,26 @@
+{
+  "name": "Botões Cadastro",
+  "description": "Botões ligados a Serviço e IP",
+  "version": "1.1",
+  "manifest_version": 3,
+  "permissions": [
+    "nativeMessaging",
+    "cookies"
+  ],
+  "host_permissions": [
+    "https://intranetclt01.mgconecta.com.br/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://intranetclt01.mgconecta.com.br:8443/cadastro.php?id=*",
+      	"https://intranetclt01.mgconecta.com.br:8443/cadastro_pop.php?id=*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
