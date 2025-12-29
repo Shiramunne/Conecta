@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Pesquisar CPF/CNPJ",
+  "version": "1.6",
+  "description": "Pesquisar CPF/CNPJ em janela popup na tela ativa",
+  "permissions": [
+    "contextMenus",
+    "tabs",
+    "system.display"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
