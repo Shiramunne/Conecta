@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <title>Textos Prontos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="fab-wrap">
+      <button id="btnAdd" class="icon-button" title="Opções" aria-label="Abrir menu" aria-haspopup="menu" aria-expanded="false">+</button>
+      <div id="fab-menu" class="menu" role="menu">
+        <button role="menuitem" id="mi-add-text">➕ Adicionar texto</button>
+        <button role="menuitem" id="mi-import">📥 Importar</button>
+        <button role="menuitem" id="mi-export">📤 Exportar</button>
+      </div>
+    </div>
+    <input id="search" type="text" placeholder="Buscar..." aria-label="Buscar textos" />
+  </header>
+
+  <section id="addPanel" class="add-panel" hidden>
+    <div class="add-grid">
+      <label class="field">
+        <span>Título</span>
+        <input id="newLabel" type="text" placeholder="Ex.: Saudação breve" />
+      </label>
+      <label class="field">
+        <span>Texto</span>
+        <textarea id="newText" rows="3" placeholder="Ex.: Olá! Tudo bem?"></textarea>
+      </label>
+    </div>
+    <div class="add-actions">
+      <button id="cancelAdd" class="btn ghost">Cancelar</button>
+      <button id="saveAdd" class="btn primary">Salvar</button>
+    </div>
+  </section>
+
+  <section id="editPanel" class="add-panel" hidden>
+    <input type="hidden" id="editId" />
+    <div class="add-grid">
+      <label class="field">
+        <span>Editar Título</span>
+        <input id="editLabel" type="text" />
+      </label>
+      <label class="field">
+        <span>Editar Texto</span>
+        <textarea id="editText" rows="3"></textarea>
+      </label>
+    </div>
+    <div class="add-actions">
+      <button id="cancelEdit" class="btn ghost">Cancelar</button>
+      <button id="saveEdit" class="btn primary">Atualizar</button>
+    </div>
+  </section>
+
+  <ul id="list" class="list" aria-live="polite"></ul>
+  <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
+
+  <div id="confirmModal" class="modal" hidden>
+    <div class="modal-content">
+      <p id="confirmMessage">Tem certeza que deseja remover este texto?</p>
+      <div class="modal-actions">
+        <button id="confirmYes" class="btn danger">Remover</button>
+        <button id="confirmNo" class="btn ghost">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
