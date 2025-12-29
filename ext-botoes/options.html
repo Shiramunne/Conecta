@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Opções - Botões Condicionais</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; }
+    label { display:block; margin-bottom:8px; font-weight:600; }
+    input[type="text"] { width:100%; padding:8px; margin-bottom:12px; box-sizing:border-box; }
+    button { padding:8px 12px; }
+    .hint { color:#666; font-size:13px; margin-top:8px; }
+  </style>
+</head>
+<body>
+  <h2>Configurar página onde os botões aparecem</h2>
+  <label for="targetUrl">URL ou parte da URL</label>
+  <input id="targetUrl" type="text" placeholder="Ex: https://example.com/minha-pagina" />
+  <div>
+    <button id="saveBtn">Salvar</button>
+    <button id="clearBtn">Limpar</button>
+  </div>
+  <p class="hint">Digite a URL completa ou apenas um trecho. Os botões aparecerão quando a URL atual incluir esse texto.</p>
+
+  <script src="options.js"></script>
+</body>
+</html>

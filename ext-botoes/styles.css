@@ -1,0 +1,89 @@
+:root {
+  --bg-btn: rgba(15, 23, 42, 0.9);
+  --primary: #6366f1;
+  --text: #f8fafc;
+  --border: rgba(255, 255, 255, 0.1);
+  --success: #10b981;
+}
+
+.ce-container { 
+  position: fixed; right: 25px; bottom: 25px; z-index: 2147483647; 
+  display: flex; flex-direction: row; align-items: flex-end; gap: 10px;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.ce-wrapper { 
+  display: flex; flex-direction: row; gap: 10px; align-items: center;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.ce-button { 
+  background: var(--bg-btn); color: var(--text); border: 1px solid var(--border);
+  padding: 12px 18px; border-radius: 10px; cursor: pointer; font-size: 13px; 
+  font-weight: 600; min-width: 100px; backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); transition: all 0.2s;
+  position: relative;
+}
+
+.ce-button:hover { 
+  background: var(--primary); transform: translateY(-4px); 
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+}
+
+.ce-toggle { 
+  background: var(--bg-btn); color: var(--text); border: 1px solid var(--border);
+  width: 45px; height: 43px; border-radius: 10px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 22px; font-weight: bold; transition: 0.2s;
+}
+
+.ce-panel { 
+  position: absolute; bottom: calc(100% + 12px); left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 8px; background: transparent; 
+  padding: 0; border: none; min-width: 160px; pointer-events: auto;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(10px); } }
+
+.ce-service-btn { 
+  background: var(--bg-btn); color: var(--text); border: 1px solid var(--border);
+  padding: 12px 16px; border-radius: 10px; cursor: pointer; font-size: 12px; 
+  text-align: left; backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transition: all 0.2s; white-space: nowrap;
+}
+
+.ce-service-btn:hover { background: var(--success); transform: scale(1.05); }
+
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: #64748b; position: absolute; right: 8px; top: 8px; }
+.active-dot { background: var(--success); box-shadow: 0 0 8px var(--success); }
+
+.hidden { opacity: 0; transform: translateX(30px) scale(0.8); pointer-events: none; }
+/* Adicione isso ao seu styles.css atual */
+.ce-container { 
+  position: fixed !important; 
+  right: 25px !important; 
+  bottom: 25px !important; 
+  z-index: 2147483647 !important; 
+  display: flex !important; 
+  flex-direction: row !important; 
+  align-items: center !important; 
+}
+
+.ce-wrapper { 
+  display: flex !important; 
+  flex-direction: row !important; 
+  gap: 10px !important; 
+}
+
+/* Garante que os popups originais (Zabbix/Monitoramento) fiquem visíveis */
+.ce-zabbix-popup, .ce-monitoramento-popup, .ce-monitoramento-popup div {
+  color: #333 !important; /* Texto escuro para o fundo branco do popup */
+}
+
+.ce-zabbix-popup input, .ce-monitoramento-popup input {
+  border: 1px solid #ccc !important;
+  background: #fff !important;
+  color: #000 !important;
+}
