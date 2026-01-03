@@ -1,0 +1,43 @@
+#txt-pronto-floating-menu {
+  position: absolute;
+  z-index: 2147483647;
+  width: 280px;
+  background: transparent !important;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  display: block !important; /* Mantém no DOM para transição fluida */
+}
+
+#txt-pronto-floating-menu.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.txt-item {
+  background: rgba(15, 23, 42, 0.9) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Estado de Hover e Seleção por teclado */
+.txt-item.active, .txt-item:hover {
+  background: #6366f1 !important; /* Cor primary da sua outra extensão */
+  transform: translateY(-3px) scale(1.02);
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+}
+
+.txt-item strong { font-size: 13px; font-weight: 600; pointer-events: none; }
+.txt-item span { font-size: 11px; opacity: 0.7; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
