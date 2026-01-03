@@ -1,6 +1,6 @@
 // ===== Configurações =====
 const MENU_ID = 'textos_prontos_menu';
-const POPUP_SIZE = { width: 430, height: 560 }; // ajuste se quiser
+const POPUP_SIZE = { width: 375, height: 600 }; // ajuste se quiser
 
 // ===== Menu de contexto =====
 function createContextMenu() {

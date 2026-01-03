@@ -1,172 +1,148 @@
 'use strict';
 
 let templates = [];
+let deleteId = null;
 const STORAGE_KEY = 'templates';
 
+// Utilitários
 function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
 
 function showToast(msg) {
   const toastEl = document.getElementById('toast');
-  if (!toastEl) return;
   toastEl.textContent = msg;
   toastEl.classList.add('show');
-  setTimeout(() => toastEl.classList.remove('show'), 1200);
+  setTimeout(() => toastEl.classList.remove('show'), 2000);
 }
 
-function escapeHtml(s) {
-  return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function escapeHtml(text) {
+  if (!text) return '';
+  return text.replace(/[&<>"']/g, function(m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+  });
 }
 
+// Armazenamento
 async function loadTemplates() {
   const data = await chrome.storage.local.get({ [STORAGE_KEY]: [] });
   templates = data[STORAGE_KEY];
 }
-
 async function saveTemplates() {
   await chrome.storage.local.set({ [STORAGE_KEY]: templates });
 }
 
-// --- Funções de Importação e Exportação ---
+// Renderização da Lista
+function renderList(query = '') {
+  const list = document.getElementById('list');
+  // Salva a posição do scroll atual antes de renderizar
+  const scrollPos = window.scrollY;
+  
+  list.innerHTML = '';
 
-function exportTemplates() {
-  const blob = new Blob([JSON.stringify(templates, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `backup_textos_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('Exportado com sucesso!');
-}
+  const q = query.toLowerCase();
+  const filtered = templates.filter(t => 
+    t.label.toLowerCase().includes(q) || t.text.toLowerCase().includes(q)
+  );
 
-function importTemplates() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = e => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const imported = JSON.parse(event.target.result);
-        if (Array.isArray(imported)) {
-          const existingIds = new Set(templates.map(t => t.id));
-          const newItems = imported.filter(item => !existingIds.has(item.id));
-          
-          templates = [...newItems, ...templates];
-          await saveTemplates();
-          renderList();
-          showToast(`${newItems.length} textos importados!`);
-        }
-      } catch (err) {
-        showToast('Erro ao ler arquivo.');
-      }
-    };
-    reader.readAsText(file);
-  };
-  input.click();
-}
+  if (filtered.length === 0) {
+    list.innerHTML = `<li style="text-align:center; color:var(--muted); padding:20px;">Nenhum texto encontrado.</li>`;
+    return;
+  }
 
-// --- Interface e Listagem ---
-
-function showConfirm(message) {
-  return new Promise((resolve) => {
-    const modal = document.getElementById('confirmModal');
-    const msgEl = document.getElementById('confirmMessage');
-    const yesBtn = document.getElementById('confirmYes');
-    const noBtn = document.getElementById('confirmNo');
-    msgEl.textContent = message;
-    modal.hidden = false;
-    const cleanup = (res) => { modal.hidden = true; yesBtn.onclick = null; noBtn.onclick = null; resolve(res); };
-    yesBtn.onclick = () => cleanup(true);
-    noBtn.onclick = () => cleanup(false);
+  filtered.forEach(t => {
+    const li = document.createElement('li');
+    li.className = 'item';
+    li.innerHTML = `
+      <div class="item-content">
+        <div class="title">${escapeHtml(t.label)}</div>
+        <div class="preview">${escapeHtml(t.text)}</div>
+      </div>
+      <div class="item-actions">
+        <button class="btn primary btn-copy" data-text="${escapeHtml(t.text)}">Copiar</button>
+        <button class="btn ghost btn-edit" data-id="${t.id}">Editar</button>
+        <button class="btn danger btn-delete" data-id="${t.id}">Remover</button>
+      </div>
+    `;
+    list.appendChild(li);
   });
-}
 
-function renderList(filter = '') {
-  const listEl = document.getElementById('list');
-  if (!listEl) return;
-  listEl.innerHTML = '';
-  const q = filter.trim().toLowerCase();
+  // Eventos dos botões da lista
+  list.querySelectorAll('.btn-copy').forEach(btn => {
+    btn.onclick = async () => {
+      const text = btn.getAttribute('data-text'); // Pega o texto bruto do atributo
+      // Decodifica HTML entities se necessário, mas aqui pegamos o atributo que já tratamos
+      // Uma abordagem melhor para copiar: usar o texto original do array
+      const itemText = btn.parentElement.parentElement.querySelector('.preview').innerText; 
+      
+      // Maneira mais segura: achar no array pelo ID (mas aqui simplificamos)
+      try {
+        await navigator.clipboard.writeText(text); // Tenta copiar do atributo
+        showToast('Copiado!');
+      } catch (err) {
+        // Fallback
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast('Copiado!');
+      }
+      window.close();
+    };
+  });
 
-  templates
-    // CORREÇÃO: Busca apenas no título (label)
-    .filter(t => !q || t.label.toLowerCase().includes(q))
-    .forEach(t => {
-      const li = document.createElement('li');
-      li.className = 'item';
-      li.innerHTML = `
-        <div class="info">
-          <strong class="title">${escapeHtml(t.label)}</strong>
-          <span class="preview">${escapeHtml(t.text)}</span>
-        </div>
-        <div class="actions"></div>
-      `;
-
-      const actions = li.querySelector('.actions');
-
-      const copyBtn = document.createElement('button');
-      copyBtn.className = 'btn primary';
-      copyBtn.textContent = 'Copiar';
-      copyBtn.onclick = () => {
-        navigator.clipboard.writeText(t.text).then(() => {
-          showToast('Copiado!');
-          setTimeout(() => window.close(), 300);
-        });
-      };
-
-      const editBtn = document.createElement('button');
-      editBtn.className = 'btn ghost';
-      editBtn.textContent = 'Editar';
-      editBtn.onclick = () => {
+  list.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute('data-id');
+      const t = templates.find(x => x.id === id);
+      if (t) {
         document.getElementById('editId').value = t.id;
         document.getElementById('editLabel').value = t.label;
         document.getElementById('editText').value = t.text;
-        document.getElementById('addPanel').hidden = true;
-        document.getElementById('editPanel').hidden = false;
+        document.getElementById('editModal').hidden = false;
         document.getElementById('editLabel').focus();
-      };
+      }
+    };
+  });
 
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'btn danger ghost';
-      removeBtn.textContent = 'Remover';
-      removeBtn.onclick = async () => {
-        if (await showConfirm(`Remover "${t.label}"?`)) {
-          templates = templates.filter(x => x.id !== t.id);
-          await saveTemplates();
-          renderList(document.getElementById('search').value);
-        }
-      };
+  list.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.onclick = () => {
+      deleteId = btn.getAttribute('data-id');
+      document.getElementById('confirmModal').hidden = false;
+    };
+  });
 
-      actions.append(copyBtn, editBtn, removeBtn);
-      listEl.appendChild(li);
-    });
+  // Restaura o scroll para onde estava
+  window.scrollTo(0, scrollPos);
 }
 
+// Inicialização e Eventos Globais
 document.addEventListener('DOMContentLoaded', async () => {
-  const searchEl = document.getElementById('search');
-  const fabMenu = document.getElementById('fab-menu');
-  const btnAdd = document.getElementById('btnAdd');
-
   await loadTemplates();
+  const searchEl = document.getElementById('search');
   renderList();
-  
-  searchEl.focus();
 
+  searchEl.oninput = () => renderList(searchEl.value);
+
+  // Menu Flutuante (FAB)
+  const btnAdd = document.getElementById('btnAdd');
+  const fabMenu = document.getElementById('fab-menu');
+  
   btnAdd.onclick = (e) => {
     e.stopPropagation();
     fabMenu.classList.toggle('show');
   };
-  
-  document.onclick = () => fabMenu.classList.remove('show');
+  document.onclick = (e) => {
+    if (!fabMenu.contains(e.target) && e.target !== btnAdd) {
+      fabMenu.classList.remove('show');
+    }
+  };
 
-  // Eventos do Menu
+  // Menu Actions
   document.getElementById('mi-add-text').onclick = () => {
-    document.getElementById('editPanel').hidden = true;
     document.getElementById('addPanel').hidden = false;
-    document.getElementById('newLabel').value = '';
-    document.getElementById('newText').value = '';
     document.getElementById('newLabel').focus();
+    fabMenu.classList.remove('show');
   };
 
   document.getElementById('mi-import').onclick = () => {
@@ -179,33 +155,101 @@ document.addEventListener('DOMContentLoaded', async () => {
     fabMenu.classList.remove('show');
   };
 
-  // Botões de Ação (Salvar/Cancelar)
+  // --- ADICIONAR NOVO ---
   document.getElementById('saveAdd').onclick = async () => {
     const label = document.getElementById('newLabel').value.trim();
     const text = document.getElementById('newText').value.trim();
     if (!label || !text) return;
+    
     templates.unshift({ id: uid(), label, text });
     await saveTemplates();
+    
+    // Limpa
+    document.getElementById('newLabel').value = '';
+    document.getElementById('newText').value = '';
     document.getElementById('addPanel').hidden = true;
+    
     renderList(searchEl.value);
+    showToast('Texto criado!');
+  };
+  document.getElementById('cancelAdd').onclick = () => {
+    document.getElementById('addPanel').hidden = true;
   };
 
+  // --- EDITAR (MODAL) ---
   document.getElementById('saveEdit').onclick = async () => {
     const id = document.getElementById('editId').value;
     const label = document.getElementById('editLabel').value.trim();
     const text = document.getElementById('editText').value.trim();
+    
     const idx = templates.findIndex(t => t.id === id);
-    if (idx !== -1) {
+    if (idx !== -1 && label && text) {
       templates[idx] = { id, label, text };
       await saveTemplates();
-      document.getElementById('editPanel').hidden = true;
-      renderList(searchEl.value);
-      showToast('Atualizado');
+      document.getElementById('editModal').hidden = true;
+      renderList(searchEl.value); // O renderList agora preserva o scroll
+      showToast('Atualizado!');
     }
   };
+  document.getElementById('cancelEdit').onclick = () => {
+    document.getElementById('editModal').hidden = true;
+  };
 
-  document.getElementById('cancelAdd').onclick = () => document.getElementById('addPanel').hidden = true;
-  document.getElementById('cancelEdit').onclick = () => document.getElementById('editPanel').hidden = true;
-  
-  searchEl.oninput = (e) => renderList(e.target.value);
+  // --- DELETAR (MODAL) ---
+  document.getElementById('confirmDelete').onclick = async () => {
+    if (deleteId) {
+      templates = templates.filter(t => t.id !== deleteId);
+      await saveTemplates();
+      deleteId = null;
+      document.getElementById('confirmModal').hidden = true;
+      renderList(searchEl.value);
+      showToast('Removido');
+    }
+  };
+  document.getElementById('cancelDelete').onclick = () => {
+    deleteId = null;
+    document.getElementById('confirmModal').hidden = true;
+  };
 });
+
+// Import/Export (Lógica Mantida Simples)
+function exportTemplates() {
+  const blob = new Blob([JSON.stringify(templates, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `backup_textos_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.json`;
+  a.click();
+}
+
+function importTemplates() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async event => {
+      try {
+        const json = JSON.parse(event.target.result);
+        if (Array.isArray(json)) {
+          // Merge simples evitando duplicatas exatas de ID, mas permitindo novos
+          const currentIds = new Set(templates.map(t => t.id));
+          const newItems = json.filter(item => item.label && item.text).map(item => {
+             if (!item.id || currentIds.has(item.id)) item.id = uid();
+             return item;
+          });
+          templates = [...newItems, ...templates];
+          await saveTemplates();
+          renderList();
+          showToast(`${newItems.length} textos importados!`);
+        }
+      } catch (err) {
+        showToast('Erro no arquivo JSON');
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}

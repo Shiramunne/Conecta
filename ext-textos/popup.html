@@ -9,60 +9,62 @@
 <body>
   <header class="header">
     <div class="fab-wrap">
-      <button id="btnAdd" class="icon-button" title="Opções" aria-label="Abrir menu" aria-haspopup="menu" aria-expanded="false">+</button>
+      <button id="btnAdd" class="icon-button" title="Menu" aria-label="Abrir menu">+</button>
       <div id="fab-menu" class="menu" role="menu">
         <button role="menuitem" id="mi-add-text">➕ Adicionar texto</button>
-        <button role="menuitem" id="mi-import">📥 Importar</button>
-        <button role="menuitem" id="mi-export">📤 Exportar</button>
+        <button role="menuitem" id="mi-import">📥 Importar JSON</button>
+        <button role="menuitem" id="mi-export">📤 Exportar Backup</button>
       </div>
     </div>
-    <input id="search" type="text" placeholder="Buscar..." aria-label="Buscar textos" />
+    <input id="search" type="text" placeholder="Pesquisar textos..." aria-label="Buscar textos" autofocus />
   </header>
 
   <section id="addPanel" class="add-panel" hidden>
-    <div class="add-grid">
-      <label class="field">
-        <span>Título</span>
-        <input id="newLabel" type="text" placeholder="Ex.: Saudação breve" />
-      </label>
-      <label class="field">
-        <span>Texto</span>
-        <textarea id="newText" rows="3" placeholder="Ex.: Olá! Tudo bem?"></textarea>
-      </label>
+    <h3 class="modal-title" style="margin-bottom: 12px;">Novo Texto</h3>
+    <div class="field" style="margin-bottom: 10px;">
+      <span>Título / Atalho</span>
+      <input id="newLabel" type="text" placeholder="Ex.: Saudação" />
     </div>
-    <div class="add-actions">
+    <div class="field" style="margin-bottom: 16px;">
+      <span>Conteúdo do Texto</span>
+      <textarea id="newText" rows="4" placeholder="Digite o texto aqui..."></textarea>
+    </div>
+    <div class="actions-right">
       <button id="cancelAdd" class="btn ghost">Cancelar</button>
-      <button id="saveAdd" class="btn primary">Salvar</button>
-    </div>
-  </section>
-
-  <section id="editPanel" class="add-panel" hidden>
-    <input type="hidden" id="editId" />
-    <div class="add-grid">
-      <label class="field">
-        <span>Editar Título</span>
-        <input id="editLabel" type="text" />
-      </label>
-      <label class="field">
-        <span>Editar Texto</span>
-        <textarea id="editText" rows="3"></textarea>
-      </label>
-    </div>
-    <div class="add-actions">
-      <button id="cancelEdit" class="btn ghost">Cancelar</button>
-      <button id="saveEdit" class="btn primary">Atualizar</button>
+      <button id="saveAdd" class="btn primary">Salvar Texto</button>
     </div>
   </section>
 
   <ul id="list" class="list" aria-live="polite"></ul>
-  <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
+  
+  <div id="toast" class="toast"></div>
 
-  <div id="confirmModal" class="modal" hidden>
-    <div class="modal-content">
-      <p id="confirmMessage">Tem certeza que deseja remover este texto?</p>
-      <div class="modal-actions">
-        <button id="confirmYes" class="btn danger">Remover</button>
-        <button id="confirmNo" class="btn ghost">Cancelar</button>
+  <div id="editModal" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <h3 class="modal-title">Editar Texto</h3>
+      <input type="hidden" id="editId" />
+      <div class="field">
+        <span>Título</span>
+        <input id="editLabel" type="text" />
+      </div>
+      <div class="field">
+        <span>Texto</span>
+        <textarea id="editText" rows="6"></textarea>
+      </div>
+      <div class="actions-right">
+        <button id="cancelEdit" class="btn ghost">Cancelar</button>
+        <button id="saveEdit" class="btn primary">Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="modal-overlay" hidden>
+    <div class="modal-box" style="text-align: center;">
+      <h3 class="modal-title">Tem certeza?</h3>
+      <p style="color: var(--muted); margin: 0;">Você vai apagar este texto permanentemente.</p>
+      <div class="actions-right" style="justify-content: center; margin-top: 8px;">
+        <button id="cancelDelete" class="btn ghost">Cancelar</button>
+        <button id="confirmDelete" class="btn danger">Sim, apagar</button>
       </div>
     </div>
   </div>
