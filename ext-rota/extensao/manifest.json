@@ -8,7 +8,9 @@
     "cookies"
   ],
   "host_permissions": [
-    "https://intranetclt01.mgconecta.com.br/*"
+    "https://intranetclt01.mgconecta.com.br/*",
+    "http://*/*",
+    "https://*/*"
   ],
   "background": {
     "service_worker": "background.js"
