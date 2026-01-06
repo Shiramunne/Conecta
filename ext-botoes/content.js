@@ -39,7 +39,12 @@ async function fetchCadastroDoc(codigo) {
   const urlCadastro = `https://intranetclt01.mgconecta.com.br:8443/cadastro.php?id=${codigo}`;
   const res = await fetch(urlCadastro, { credentials: "include" });
   if (!res.ok) throw new Error("Falha ao carregar cadastro");
-  const html = await res.text();
+  
+  // CORREÇÃO DE ENCODING
+  const buffer = await res.arrayBuffer();
+  const decoder = new TextDecoder("iso-8859-1");
+  const html = decoder.decode(buffer);
+
   const parser = new DOMParser();
   return parser.parseFromString(html, "text/html");
 }
@@ -157,7 +162,12 @@ async function coletarDadosServico(codigoCadastro, codigoServico) {
   const url = `https://intranetclt01.mgconecta.com.br:8443/servicos_fibra_alterar.php?id=${codigoCadastro}&id_servico=${codigoServico}`;
   const res = await fetch(url, { credentials: "include" });
   if (!res.ok) throw new Error("Falha ao carregar serviço");
-  const html = await res.text();
+  
+  // CORREÇÃO DE ENCODING
+  const buffer = await res.arrayBuffer();
+  const decoder = new TextDecoder("iso-8859-1");
+  const html = decoder.decode(buffer);
+  
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
   const dados = {};
@@ -179,7 +189,12 @@ async function coletarDadosZabbix(codigoCadastro, codigoServico) {
   const url = `https://intranetclt01.mgconecta.com.br:8443/servicos_fibra_alterar.php?id=${codigoCadastro}&id_servico=${codigoServico}`;
   const res = await fetch(url, { credentials: "include" });
   if (!res.ok) throw new Error("Falha ao carregar serviço");
-  const html = await res.text();
+  
+  // CORREÇÃO AQUI: Ler como buffer e decodificar ISO-8859-1
+  const buffer = await res.arrayBuffer();
+  const decoder = new TextDecoder("iso-8859-1");
+  const html = decoder.decode(buffer);
+
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
 
@@ -194,7 +209,6 @@ async function coletarDadosZabbix(codigoCadastro, codigoServico) {
 
   return { codigoCadastro, nomeCliente: rawNomeCliente, codigoServico, olt, cto, ip };
 }
-
 // ==============================
 // Formatação de textos e cópia
 // ==============================
@@ -325,14 +339,17 @@ function posicionarPainelFrenteDoBotao(botao, painel) {
 }
 
 // ==============================
-// Solicitação (mantido)
+// Solicitação (Vertical + Feedback de Espera)
 // ==============================
 async function abrirSolicitacao() {
   const codigoCadastro = getCodigoCadastro();
   if (!codigoCadastro) { alert("Não foi possível encontrar o código do cliente."); return; }
+  
   if (painelServicos) { painelServicos.remove(); painelServicos = null; }
+  
   let doc;
   try { doc = await fetchCadastroDoc(codigoCadastro); } catch (e) { return; }
+  
   const linhas = Array.from(doc.querySelectorAll("tbody tr"));
   const servicosFibra = [];
   linhas.forEach(tr => {
@@ -343,13 +360,15 @@ async function abrirSolicitacao() {
       servicosFibra.push({ codigoServico });
     }
   });
+  
   if (servicosFibra.length === 0) { alert("Nenhum serviço de Fibra encontrado no cadastro."); return; }
 
   painelServicos = document.createElement("div");
   painelServicos.style.position = "absolute";
   painelServicos.style.display = "flex";
-  painelServicos.style.flexDirection = "row";
+  painelServicos.style.flexDirection = "column"; // Mantendo vertical
   painelServicos.style.gap = "6px";
+  painelServicos.style.paddingTop = "10px"; 
   painelServicos.style.background = "transparent";
   painelServicos.style.zIndex = "2147483647";
 
@@ -357,15 +376,39 @@ async function abrirSolicitacao() {
     const btnServico = document.createElement("button");
     btnServico.className = "ce-button ce-service-button";
     btnServico.textContent = codigoServico;
+    
+    // --- LÓGICA DE FEEDBACK VISUAL ADICIONADA AQUI ---
     btnServico.addEventListener("click", async () => {
+      const textoOriginal = btnServico.textContent; // Salva o ID (ex: 12345)
+      
       try {
+        // 1. Muda para "Coletando..."
+        btnServico.textContent = "Coletando...";
+        
+        // 2. Coleta os dados (demorado)
         const dados = await coletarDadosServico(codigoCadastro, codigoServico);
+        
+        // 3. Formata e Copia
         const listaTexto = formatarDadosTextoSolicitacao(dados);
         await copyToClipboardRobusto(listaTexto);
-      } finally {
-        if (painelServicos) { painelServicos.remove(); painelServicos = null; }
+
+        // 4. Sucesso: Muda para "Copiado!" e aguarda um pouco antes de fechar
+        btnServico.textContent = "Copiado!";
+        
+        setTimeout(() => {
+          if (painelServicos) { painelServicos.remove(); painelServicos = null; }
+        }, 800); // 800ms para você ler "Copiado!"
+
+      } catch (erro) {
+        console.error(erro);
+        // 5. Erro: Mostra "Falha" e volta para o ID original para tentar de novo
+        btnServico.textContent = "Falha";
+        setTimeout(() => {
+            btnServico.textContent = textoOriginal;
+        }, 1500);
       }
     });
+
     painelServicos.appendChild(btnServico);
   });
 
@@ -539,7 +582,7 @@ async function abrirLinks() {
 }
 
 // ==============================
-// Zabbix: primeiro mostra Dados/CTO empilhados, depois lista serviços
+// Zabbix: Botão Automático (Lê da página)
 // ==============================
 async function abrirZabbix() {
   const codigoCadastro = getCodigoCadastro();
@@ -548,31 +591,51 @@ async function abrirZabbix() {
     return;
   }
 
+  // 1. Limpeza: Se já houver painel aberto, remove para recriar
   if (painelServicos) {
     painelServicos.remove();
     painelServicos = null;
   }
 
+  // Seletor do botão onde o painel vai "grudar"
   const botaoZabbix = document.querySelector(".ce-buttons-container .ce-button:nth-child(3)");
 
-  // painel inicial (Dados / CTO)
+  // 2. Cria o container do painel
   painelServicos = document.createElement("div");
   painelServicos.style.position = "absolute";
   painelServicos.style.display = "flex";
   painelServicos.style.flexDirection = "column";
   painelServicos.style.gap = "6px";
-  painelServicos.style.background = "transparent";
+  painelServicos.style.paddingTop = "10px";
   painelServicos.style.zIndex = "2147483647";
 
+  // =================================================
+  // BOTÃO 1: DADOS (SERVIÇOS FIBRA)
+  // =================================================
   const btnDados = document.createElement("button");
   btnDados.className = "ce-button ce-service-button";
   btnDados.textContent = "Dados";
+  
   btnDados.addEventListener("click", async () => {
-    painelServicos.innerHTML = "";
+    const textoOriginal = btnDados.textContent;
+    btnDados.textContent = "..."; 
+
     let doc;
-    try { doc = await fetchCadastroDoc(codigoCadastro); } catch (e) { return; }
+    try { 
+      doc = await fetchCadastroDoc(codigoCadastro); 
+    } catch (e) { 
+      btnDados.textContent = "Erro Fetch";
+      setTimeout(() => btnDados.textContent = textoOriginal, 2000);
+      return; 
+    }
+
+    if (!painelServicos) return; 
+
+    painelServicos.innerHTML = "";
+    
     const linhas = Array.from(doc.querySelectorAll("tbody tr"));
     const servicosFibra = [];
+    
     linhas.forEach(tr => {
       const th = tr.querySelector("th");
       if (th && th.textContent && th.textContent.includes("Fibra")) {
@@ -581,31 +644,64 @@ async function abrirZabbix() {
         servicosFibra.push({ codigoServico });
       }
     });
-    servicosFibra.forEach(({ codigoServico }) => {
-      const btnServico = document.createElement("button");
-      btnServico.className = "ce-button ce-service-button";
-      btnServico.textContent = codigoServico;
-      btnServico.addEventListener("click", async () => {
-        try {
-          const dados = await coletarDadosZabbix(codigoCadastro, codigoServico);
-          const texto = formatarDadosZabbix(dados);
-          await copyToClipboardRobusto(texto);
-        } finally {
-          if (painelServicos) { painelServicos.remove(); painelServicos = null; }
-        }
+
+    if (servicosFibra.length === 0) {
+       const aviso = document.createElement("div");
+       aviso.textContent = "Sem Fibra";
+       aviso.style.cssText = "color:#fff; padding:5px; background:rgba(0,0,0,0.8); border-radius:4px; font-size:12px;";
+       painelServicos.appendChild(aviso);
+    } else {
+       servicosFibra.forEach(({ codigoServico }) => {
+        const btnServico = document.createElement("button");
+        btnServico.className = "ce-button ce-service-button";
+        btnServico.textContent = codigoServico;
+        
+        btnServico.addEventListener("click", async () => {
+          const originalText = btnServico.textContent;
+          btnServico.textContent = "Coletando...";
+          try {
+            const dados = await coletarDadosZabbix(codigoCadastro, codigoServico);
+            const texto = formatarDadosZabbix(dados);
+            await copyToClipboardRobusto(texto);
+            btnServico.textContent = "Copiado!";
+            setTimeout(() => {
+              if (painelServicos) { painelServicos.remove(); painelServicos = null; }
+            }, 800);
+          } catch (erro) {
+             console.error(erro);
+             btnServico.textContent = "Falha";
+             setTimeout(() => btnServico.textContent = originalText, 1500);
+          }
+        });
+        painelServicos.appendChild(btnServico);
       });
-      painelServicos.appendChild(btnServico);
-    });
+    }
     posicionarPainelFrenteDoBotao(botaoZabbix, painelServicos);
   });
 
+  // =================================================
+  // BOTÃO 2: CTO
+  // =================================================
   const btnCto = document.createElement("button");
   btnCto.className = "ce-button ce-service-button";
   btnCto.textContent = "CTO";
+  
   btnCto.addEventListener("click", async () => {
-    painelServicos.innerHTML = "";
+    const textoOriginal = btnCto.textContent;
+    btnCto.textContent = "...";
+
     let doc;
-    try { doc = await fetchCadastroDoc(codigoCadastro); } catch (e) { return; }
+    try { 
+      doc = await fetchCadastroDoc(codigoCadastro); 
+    } catch (e) { 
+      btnCto.textContent = textoOriginal;
+      return; 
+    }
+
+    if (!painelServicos) return;
+
+    painelServicos.innerHTML = "";
+    
     const linhas = Array.from(doc.querySelectorAll("tbody tr"));
     const servicosFibra = [];
     linhas.forEach(tr => {
@@ -616,32 +712,51 @@ async function abrirZabbix() {
         servicosFibra.push({ codigoServico });
       }
     });
-    servicosFibra.forEach(({ codigoServico }) => {
-      const btnServico = document.createElement("button");
-      btnServico.className = "ce-button ce-service-button";
-      btnServico.textContent = codigoServico;
-      btnServico.addEventListener("click", async () => {
-        try {
-          const dados = await coletarDadosZabbix(codigoCadastro, codigoServico);
-          if (dados.cto) {
-            const numeroCto = dados.cto.replace(/\s*\/\s*\d+$/, "").trim();
-            const urlMapa = `https://intranetclt01.mgconecta.com.br:8443/fibra_caixas_mapa.php?id_cto=${numeroCto}`;
-            window.open(urlMapa, "popupCTO", "width=800,height=600,scrollbars=yes");
-          } else {
-            alert("CTO não encontrada para este serviço.");
-          }
-        } finally {
-          if (painelServicos) { painelServicos.remove(); painelServicos = null; }
-        }
-      });
-      painelServicos.appendChild(btnServico);
-    });
+
+    if (servicosFibra.length === 0) {
+        const aviso = document.createElement("div");
+        aviso.textContent = "Sem Fibra";
+        aviso.style.cssText = "color:#fff; padding:5px; background:rgba(0,0,0,0.6); border-radius:4px;";
+        painelServicos.appendChild(aviso);
+    } else {
+        servicosFibra.forEach(({ codigoServico }) => {
+          const btnServico = document.createElement("button");
+          btnServico.className = "ce-button ce-service-button";
+          btnServico.textContent = codigoServico;
+          
+          btnServico.addEventListener("click", async () => {
+            const originalText = btnServico.textContent;
+            btnServico.textContent = "Coletando...";
+            try {
+              const dados = await coletarDadosZabbix(codigoCadastro, codigoServico);
+              if (dados.cto) {
+                btnServico.textContent = "Abrindo...";
+                const numeroCto = dados.cto.replace(/\s*\/\s*\d+$/, "").trim();
+                const urlMapa = `https://intranetclt01.mgconecta.com.br:8443/fibra_caixas_mapa.php?id_cto=${numeroCto}`;
+                setTimeout(() => {
+                    window.open(urlMapa, "popupCTO", "width=800,height=600,scrollbars=yes");
+                    if (painelServicos) { painelServicos.remove(); painelServicos = null; }
+                }, 300);
+              } else {
+                alert("CTO não encontrada para este serviço.");
+                btnServico.textContent = originalText;
+              }
+            } catch (erro) {
+              btnServico.textContent = "Erro";
+              setTimeout(() => btnServico.textContent = originalText, 1500);
+            }
+          });
+          painelServicos.appendChild(btnServico);
+        });
+    }
     posicionarPainelFrenteDoBotao(botaoZabbix, painelServicos);
   });
 
+  // 5. Adiciona os botões principais ao painel
   painelServicos.appendChild(btnDados);
   painelServicos.appendChild(btnCto);
 
+  // 6. Posiciona o painel na tela
   posicionarPainelFrenteDoBotao(botaoZabbix, painelServicos);
 }
 function abrirZabbixPopup() {

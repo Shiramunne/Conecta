@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Botões Atendimento",
+  "name": "Botões Tela de Ticket",
   "version": "1.2",
   "description": "Botões com coleta de dados em segundo plano.",
   "permissions": ["clipboardWrite"],
